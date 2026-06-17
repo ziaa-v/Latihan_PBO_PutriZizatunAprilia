@@ -27,4 +27,15 @@ class TiketRegular extends Tiket
         $this->tipeAudio = $tipeAudio;
         $this->lokasiBaris = $lokasiBaris;
     }
+
+    public function hitungTotalHarga()
+    {
+        return $this->jumlah_kursi * $this->hargaDasarTiket;
+    }
+
+    public function tampilkanInfoFasilitas()
+    {
+        return "Tipe Audio : ".$this->tipeAudio.
+            " | Lokasi Baris : ".$this->lokasiBaris;
+    }
 }
