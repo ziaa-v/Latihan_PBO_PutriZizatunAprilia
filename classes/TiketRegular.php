@@ -27,3 +27,4 @@ class TiketRegular extends Tiket
         $this->tipeAudio = $tipeAudio;
         $this->lokasiBaris = $lokasiBaris;
     }
+}

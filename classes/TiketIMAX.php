@@ -27,3 +27,4 @@ class TiketIMAX extends Tiket
         $this->kacamata3dId = $kacamata3dId;
         $this->efekGerakFitur = $efekGerakFitur;
     }
+}

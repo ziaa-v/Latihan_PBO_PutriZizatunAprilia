@@ -27,3 +27,4 @@ class TiketVelvet extends Tiket
         $this->bantalSelimutPack = $bantalSelimutPack;
         $this->layananButler = $layananButler;
     }
+}
