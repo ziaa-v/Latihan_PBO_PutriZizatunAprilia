@@ -7,14 +7,14 @@ require_once "classes/TiketRegular.php";
 require_once "classes/TiketIMAX.php";
 require_once "classes/TiketVelvet.php";
 
-$cari = isset($_GET['cari']) ? $_GET['cari'] : '';
+// Mengambil data cari dan mengamankannya dari SQL Injection
+$cari = isset($_GET['cari']) ? mysqli_real_escape_string($conn, $_GET['cari']) : '';
 
 if($cari != '')
 {
     $query = mysqli_query(
         $conn,
-        "SELECT * FROM tabel_tiket
-        WHERE nama_film LIKE '%$cari%'"
+        "SELECT * FROM tabel_tiket WHERE nama_film LIKE '%$cari%'"
     );
 }
 else
@@ -42,6 +42,8 @@ else
             border-radius:12px;
             font-weight:bold;
             margin-left:10px;
+            border: none;
+            cursor: pointer;
         }
 
         .reset-btn:hover{
@@ -61,7 +63,7 @@ else
             font-size:14px;
         }
 
-        button{
+        button[type=submit]{
             padding:12px 20px;
             border:none;
             border-radius:12px;
@@ -71,7 +73,7 @@ else
             font-weight:bold;
         }
 
-        button:hover{
+        button[type=submit]:hover{
             background:#ff1493;
         }
 
@@ -143,21 +145,22 @@ else
     <h1>🎀 Pink Cinema Ticket 🎀</h1>
     <p>✨ Sistem Manajemen Tiket Bioskop Berbasis PHP OOP ✨</p>
 
-    <form method="GET">
-    <input
-        type="text"
-        name="cari"
-        placeholder="🔍 Cari film..."
-        value="<?php echo isset($_GET['cari']) ? $_GET['cari'] : ''; ?>"
-    >
+    <form action="" method="GET">
+        <input
+            type="text"
+            name="cari"
+            placeholder="🔍 Cari film..."
+            value="<?php echo isset($_GET['cari']) ? htmlspecialchars($_GET['cari']) : ''; ?>"
+        >
 
-    <button type="submit">Cari</button>
+        <button type="submit">Cari</button>
 
-    <a href="index.php" class="reset-btn">
-        🎀 Semua Film
-    </a>
-</form>
-
+        <button type="button"
+                class="reset-btn"
+                onclick="window.location.href='?';">
+            🎀 Semua Film
+        </button>
+    </form>
 </div>
 
 <?php
@@ -169,11 +172,9 @@ $total = mysqli_num_rows($query);
     <p>🎬 Film ditemukan : <b><?php echo $total; ?></b></p>
     <p>🍿 Selamat menikmati tontonan favoritmu!</p>
 </div>
+
 <?php
-
-mysqli_data_seek($query,0);
-
-if(mysqli_num_rows($query) == 0)
+if($total == 0)
 {
     echo "
     <div class='card'>
@@ -181,78 +182,75 @@ if(mysqli_num_rows($query) == 0)
         <p>Coba cari dengan kata kunci lain yaa 🎀</p>
     </div>";
 }
-
-while($data = mysqli_fetch_assoc($query))
+else
 {
-    if($data['jenis_studio'] == 'Regular')
+    while($data = mysqli_fetch_assoc($query))
     {
-        $tiket = new TiketRegular(
-            $data['id_tiket'],
-            $data['nama_film'],
-            $data['jadwal_tayang'],
-            $data['jumlah_kursi'],
-            $data['harga_dasar_tiket'],
-            $data['tipe_audio'],
-            $data['lokasi_baris']
-        );
+        if($data['jenis_studio'] == 'Regular')
+        {
+            $tiket = new TiketRegular(
+                $data['id_tiket'],
+                $data['nama_film'],
+                $data['jadwal_tayang'],
+                $data['jumlah_kursi'],
+                $data['harga_dasar_tiket'],
+                $data['tipe_audio'],
+                $data['lokasi_baris']
+            );
 
-        $class = "regular";
-    }
+            $class = "regular";
+        }
+        elseif($data['jenis_studio'] == 'IMAX')
+        {
+            $tiket = new TiketIMAX(
+                $data['id_tiket'],
+                $data['nama_film'],
+                $data['jadwal_tayang'],
+                $data['jumlah_kursi'],
+                $data['harga_dasar_tiket'],
+                $data['kacamata_3d_id'],
+                $data['efek_gerak_fitur']
+            );
 
-    elseif($data['jenis_studio'] == 'IMAX')
-    {
-        $tiket = new TiketIMAX(
-            $data['id_tiket'],
-            $data['nama_film'],
-            $data['jadwal_tayang'],
-            $data['jumlah_kursi'],
-            $data['harga_dasar_tiket'],
-            $data['kacamata_3d_id'],
-            $data['efek_gerak_fitur']
-        );
+            $class = "imax";
+        }
+        else
+        {
+            $tiket = new TiketVelvet(
+                $data['id_tiket'],
+                $data['nama_film'],
+                $data['jadwal_tayang'],
+                $data['jumlah_kursi'],
+                $data['harga_dasar_tiket'],
+                $data['bantal_selimut_pack'],
+                $data['layanan_butler']
+            );
 
-        $class = "imax";
-    }
+            $class = "velvet";
+        }
+    ?>
 
-    else
-    {
-        $tiket = new TiketVelvet(
-            $data['id_tiket'],
-            $data['nama_film'],
-            $data['jadwal_tayang'],
-            $data['jumlah_kursi'],
-            $data['harga_dasar_tiket'],
-            $data['bantal_selimut_pack'],
-            $data['layanan_butler']
-        );
+    <div class="card <?php echo $class; ?>">
+        <h3>🎬 <?php echo htmlspecialchars($data['nama_film']); ?></h3>
+        
+        <p><span class="label">🎟 Studio :</span> <?php echo htmlspecialchars($data['jenis_studio']); ?></p>
+        <p><span class="label">🕒 Jadwal :</span> <?php echo htmlspecialchars($data['jadwal_tayang']); ?></p>
+        <p><span class="label">💺 Jumlah Kursi :</span> <?php echo htmlspecialchars($data['jumlah_kursi']); ?></p>
+        
+        <p><span class="label">✨ Fasilitas :</span>
+            <?php echo $tiket->tampilkanInfoFasilitas(); ?>
+        </p>
 
-        $class = "velvet";
-    }
+        <p class="harga">
+            💸 Total Harga :
+            Rp <?php echo number_format($tiket->hitungTotalHarga(), 0, ',', '.'); ?>
+        </p>
+    </div>
 
+    <?php 
+    } 
+} 
 ?>
-
-<div class="card <?php echo $class; ?>">
-
-    <h3>🎬 <?php echo $data['nama_film']; ?></h3>
-
-    <p><span class="label">🎟 Studio :</span> <?php echo $data['jenis_studio']; ?></p>
-
-    <p><span class="label">🕒 Jadwal :</span> <?php echo $data['jadwal_tayang']; ?></p>
-
-    <p><span class="label">💺 Jumlah Kursi :</span> <?php echo $data['jumlah_kursi']; ?></p>
-
-    <p><span class="label">✨ Fasilitas :</span>
-        <?php echo $tiket->tampilkanInfoFasilitas(); ?>
-    </p>
-
-    <p class="harga">
-        💸 Total Harga :
-        Rp <?php echo number_format($tiket->hitungTotalHarga(),0,',','.'); ?>
-    </p>
-
-</div>
-
-<?php } ?>
 
 </body>
 </html>
